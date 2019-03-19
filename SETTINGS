@@ -1,0 +1,3 @@
+INPUT_FILE=UP000245539_1247513.fasta
+BLAST_PATH=/usr/local/ncbi/blast/bin
+NUM_THREADS=2
