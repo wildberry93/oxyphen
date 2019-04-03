@@ -17,3 +17,6 @@ NUM_THREADS=2
 
 Run oxyphen with a proteome of choice as an input:
 python oxyphen.py
+
+## Contact me
+In case of any problems, feel free to contact me at: jagoda.jablonska@weizmann.ac.il
