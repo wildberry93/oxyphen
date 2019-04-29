@@ -1,4 +1,4 @@
-INPUT_FILE=UP000245539_1247513.fasta
-INPUT_FILES_FOLDER=/Users/jagodajablonska/Desktop/oxygen_paper/oxyphen/PROTEOMES
+INPUT_FILE=/Users/jagodajablonska/Desktop/oxygen_paper/oxyphen/PROTEOMES/UP000245539_1247513.fasta
+PROTEOMES_FOLDER=/Users/jagodajablonska/Desktop/oxygen_paper/oxyphen/PROTEOMES
 BLAST_PATH=/usr/local/ncbi/blast/bin
 NUM_THREADS=2

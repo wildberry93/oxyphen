@@ -104,13 +104,15 @@ Make blastdb out of the swissprot subset
 
 input_file, blast_path, num_threads = read_config()
 
+print input_file, "inpuuuuut"
+
 os.system("%s -in DATA/sprot_subset.fasta -dbtype prot -out DATA/sprot_subset -hash_index" % (os.path.join(blast_path, "makeblastdb")))
 
 '''
 Blast our pre-selected proteomes against the uniprot subset
 '''
 print "Performing Blast searches against oxygen-utilizing database..."
-os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab" % (os.path.join(blast_path, "blastp"), input_file) )
+os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab -num_threads %d" % (os.path.join(blast_path, "blastp"), input_file, num_threads) )
 
 '''
 Filter Blast output.
@@ -183,7 +185,7 @@ print len(ecs_dict), "oxygen-utilizing enzymes were found from classes", ecs_dic
 print "Detailed mapping can be found in DATA/oxygen_utilizing_annot.tsv file"
 
 print "\n\n"
-print "Executing SVM classifier..."
+#print "Executing SVM classifier..."
 
 infile = open("DATA/model_svm", "r").read().splitlines()
 

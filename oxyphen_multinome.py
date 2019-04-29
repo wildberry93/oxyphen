@@ -17,13 +17,13 @@ def read_config():
             blast_path = line.split("=")[1]
         if line.startswith("NUM_THREADS"):
             num_threads = float(line.split("=")[1])
-        if line.startswith("INPUT_FILES_FOLDER") and line.split("=")[1]:
+        if line.startswith("PROTEOMES_FOLDER") and line.split("=")[1]:
             ### enter multinome mode
             multinome_folder = line.split("=")[1]
 
     return blast_path, num_threads, multinome_folder
 
-def do_oxyphen(proteome):
+def do_oxyphen(proteome, output_filename, ec_classes_file):
 
     '''
     Read and parse enzyme.dat file
@@ -111,7 +111,7 @@ def do_oxyphen(proteome):
     Blast our pre-selected proteomes against the uniprot subset
     '''
     print "Performing Blast searches against oxygen-utilizing database..."
-    os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab" % (os.path.join(blast_path, "blastp"), proteome) )
+    os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab -num_threads %d" % (os.path.join(blast_path, "blastp"), proteome, num_threads) )
 
     '''
     Filter Blast output.
@@ -162,7 +162,7 @@ def do_oxyphen(proteome):
 
     hits['EC'] = hits.subject.apply(get_ecs)
 
-    output_file_name = "DATA/oxygen_utilizing_annot.tsv"
+    output_file_name = output_filename
     hits.to_csv(output_file_name, sep="\t", index=False)
 
     ### read final mapping output
@@ -181,10 +181,13 @@ def do_oxyphen(proteome):
 
     print "\n\n"
     print len(ecs_dict), "oxygen-utilizing enzymes were found from classes", ecs_dict.keys()
-    print "Detailed mapping can be found in DATA/oxygen_utilizing_annot.tsv file"
 
-    print "\n\n"
-    print "Executing SVM classifier..."
+    ec_out = open(ec_classes_file, "w")
+    ec_out.write("\t".join(ecs_dict.keys()))
+
+    ec_out.close()
+    #print "Detailed mapping can be found in OUTPUT/oxygen_utilizing_annot.tsv file"
+    #print "Executing SVM classifier..."
 
     infile = open("DATA/model_svm", "r").read().splitlines()
 
@@ -192,12 +195,10 @@ def do_oxyphen(proteome):
     classes = []
     ec_classes = []
 
-
     for line in infile:
 
     	if line.startswith("@attribute") and "class" not in line:
     		ec_classes.append(line.split()[1].replace("'",""))
-
 
 def do_for_all():
     """
@@ -206,10 +207,21 @@ def do_for_all():
     blast_path, num_threads, multinome_folder = read_config()
     proteomes = glob.glob(os.path.join(multinome_folder,"*"))
 
-    print proteomes
+    print "\n\nPROTEOMES IN YOUR PROTEOMES_FOLDER DIRECTORY:\n", "\n".join(proteomes)
 
     for proteome in proteomes:
-        do_oxyphen(proteome)
+        fname = os.path.splitext(os.path.basename(proteome))[0]
+        output_filename = os.path.join("OUTPUT",fname+"_oxygen_utilizing_annot.tsv")
+
+        ec_classes_file = os.path.join("OUTPUT",fname+"_EC_CLASSES.txt")
+
+        print "\n\nRUNNING OXYPHEN FOR PROTEOME %s" % proteome
+        do_oxyphen(proteome, output_filename, ec_classes_file)
+
+        print "\n\nOUTPUT MAPPING FILE FOR THIS PROTEOME CAN BE FOUND IN %s" % output_filename
+        print "LIST OF EC CLASSES FOR THIS PROTEOME CAN BE FOUND IN %s" % ec_classes_file
 
 if __name__ == '__main__':
     do_for_all()
+
+    print "YOUR OUTPUT FILES CAN BE FOUND IN OUTPUT/ FOLDER"
