@@ -6,7 +6,7 @@ from sklearn.feature_selection import RFE
 from Bio.ExPASy import Enzyme
 import numpy as np
 import pandas as pd
-import os
+import os, glob
 
 CONFIG_FILE = open("SETTINGS", "r").read().splitlines()
 
@@ -25,7 +25,7 @@ def read_config():
 print(read_config())
 
 '''
-Read and parse enzyme.dat file ###
+Read and parse enzyme.dat file
 '''
 input_name = "DATA/enzyme.dat"
 output_name = 'DATA/ec_uniprot.tsv'
@@ -77,7 +77,6 @@ for line in infile:
 outfile.close()
 
 '''
-read the tsv output of parse_enzyme.py
 write a file with one uniprot ID per line, containing all of the
 uniprot IDs mentioned in uniprot column of the input file
 
@@ -126,6 +125,7 @@ hits_table_file_name_filtered_out = open("DATA/new_sequences_sprot_enzyme_filter
 
 
 hits_table_file_name_filtered_out.write("\t".join(["hit","subject","id","len","eval","cov"])+"\n")
+
 
 for line in open(hits_table_file_name, "r").read().splitlines():
     if line.startswith("#"): continue
@@ -185,26 +185,18 @@ print "Detailed mapping can be found in DATA/oxygen_utilizing_annot.tsv file"
 print "\n\n"
 print "Executing SVM classifier..."
 
+infile = open("DATA/model_svm", "r").read().splitlines()
+
+classifier_input = []
+classes = []
+ec_classes = []
 
 
+for line in infile:
 
+	if line.startswith("@attribute") and "class" not in line:
+		ec_classes.append(line.split()[1].replace("'",""))
 
-
-
-
-
-
-# infile = open("DATA/model_svm", "r").read().splitlines()
-#
-# classifier_input = []
-# classes = []
-# ec_classes = []
-#
-# for line in infile:
-#
-# 	if line.startswith("@attribute") and "class" not in line:
-# 		ec_classes.append(line.split()[1].replace("'",""))
-#
 # 	if line.startswith("@"): continue
 # 	splitted = line.replace('"','').split(",")
 # 	assignments = splitted[:-1]
