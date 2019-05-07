@@ -10,6 +10,13 @@ import os, glob
 
 CONFIG_FILE = open("SETTINGS", "r").read().splitlines()
 
+if os.path.isfile("OUTPUT/results_table.tsv"):
+    print "OUTPUT FILE EXISTS, PLEASE MOVE/REMOVE YOUR PREVIOUS RESULTS!!!"
+    exit()
+else:
+    GLOBAL_RESULTS = open("OUTPUT/results_table.tsv", "a")
+
+
 def read_config():
     multinome_folder=""
     for line in CONFIG_FILE:
@@ -29,7 +36,7 @@ def do_oxyphen(proteome, output_filename, ec_classes_file):
     Read and parse enzyme.dat file
     '''
     input_name = "DATA/enzyme.dat"
-    output_name = 'DATA/ec_uniprot.tsv'
+    output_name = "DATA/ec_uniprot.tsv"
 
     ### program ###
     handle = open(input_name)
@@ -186,6 +193,8 @@ def do_oxyphen(proteome, output_filename, ec_classes_file):
     ec_out.write("\t".join(ecs_dict.keys()))
 
     ec_out.close()
+
+    GLOBAL_RESULTS.write(os.path.basename(proteome)+"\t"+str(len(ecs_dict))+"\t"+",".join(ecs_dict.keys())+"\n")
     #print "Detailed mapping can be found in OUTPUT/oxygen_utilizing_annot.tsv file"
     #print "Executing SVM classifier..."
 
@@ -207,6 +216,7 @@ def do_for_all():
     blast_path, num_threads, multinome_folder = read_config()
     proteomes = glob.glob(os.path.join(multinome_folder,"*"))
 
+
     print "\n\nPROTEOMES IN YOUR PROTEOMES_FOLDER DIRECTORY:\n", "\n".join(proteomes)
 
     for proteome in proteomes:
@@ -220,6 +230,8 @@ def do_for_all():
 
         print "\n\nOUTPUT MAPPING FILE FOR THIS PROTEOME CAN BE FOUND IN %s" % output_filename
         print "LIST OF EC CLASSES FOR THIS PROTEOME CAN BE FOUND IN %s" % ec_classes_file
+
+    GLOBAL_RESULTS.close()
 
 if __name__ == '__main__':
     do_for_all()
