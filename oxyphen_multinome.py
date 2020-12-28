@@ -58,11 +58,12 @@ def do_oxyphen(proteome, output_filename, ec_classes_file):
             out[record['ID']]['description'] = record['DE']
             out[record['ID']]['transferred'] = False
 
-    for id in transferred:
-        out[id] = dict()
-        out[id]['uniprot'] = ' '.join([out[x]['uniprot'] for x in transferred[id]])
-        out[id]['description'] = 'Transferred entry: ' + ' '.join(transferred[id])
-        out[id]['transferred'] = True
+    # for id in transferred:
+    #     out[id] = dict()
+    #     out[id]['uniprot'] = ' '.join([out[x]['uniprot'] for x in transferred[id]])
+    #     out[id]['description'] = 'Transferred entry: ' + ' '.join(transferred[id])
+    #     out[id]['transferred'] = True
+
     df = pd.DataFrame.from_dict(out, orient='index')
     df.index.name = 'EC'
     df.to_csv(output_name, sep='\t')
@@ -97,7 +98,7 @@ def do_oxyphen(proteome, output_filename, ec_classes_file):
     df = pd.read_table(input)
     df.dropna(subset=['uniprot'], inplace=True) #ignore EC numbers with no uniprot ids associated
 
-    df = df[df.transferred == False] #ignore EC numbers that are obsolete due to transfer
+    #df = df[df.transferred == False] #ignore EC numbers that are obsolete due to transfer
 
     unique_uniprot = set(" ".join(df.uniprot.values).split(" "))
 

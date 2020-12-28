@@ -92,7 +92,7 @@ output = "DATA/uniprot_ids.txt"
 df = pd.read_table(input)
 df.dropna(subset=['uniprot'], inplace=True) #ignore EC numbers with no uniprot ids associated
 
-df = df[df.transferred == False] #ignore EC numbers that are obsolete due to transfer
+#df = df[df.transferred == False] #ignore EC numbers that are obsolete due to transfer
 
 unique_uniprot = set(" ".join(df.uniprot.values).split(" "))
 
@@ -102,91 +102,89 @@ with open(output, "w") as outfile:
 outfile.close()
 
 
-# '''
-# Make blastdb out of the swissprot subset
-# '''
+'''
+Make blastdb out of the swissprot subset
+'''
 
-# input_file, blast_path, num_threads = read_config()
+input_file, blast_path, num_threads = read_config()
 
-# print input_file, "inpuuuuut"
+os.system("%s -in DATA/sprot_subset.fasta -dbtype prot -out DATA/sprot_subset -hash_index" % (os.path.join(blast_path, "makeblastdb")))
 
-# os.system("%s -in DATA/sprot_subset.fasta -dbtype prot -out DATA/sprot_subset -hash_index" % (os.path.join(blast_path, "makeblastdb")))
+'''
+Blast our pre-selected proteomes against the uniprot subset
+'''
+print "Performing Blast searches against oxygen-utilizing database..."
+os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab -num_threads %d" % (os.path.join(blast_path, "blastp"), input_file, num_threads) )
 
-# '''
-# Blast our pre-selected proteomes against the uniprot subset
-# '''
-# print "Performing Blast searches against oxygen-utilizing database..."
-# os.system("%s -max_target_seqs 1 -outfmt '6 qseqid sseqid pident evalue qcovs' -query %s -db DATA/sprot_subset -out DATA/new_sequences_sprot_enzyme.tab -num_threads %d" % (os.path.join(blast_path, "blastp"), input_file, num_threads) )
+'''
+Filter Blast output.
+'''
+evalue = 10e-3
+identity = 40.0
+coverage = 40.0
 
-# '''
-# Filter Blast output.
-# '''
-# evalue = 10e-3
-# identity = 40.0
-# coverage = 40.0
-
-# print "Filtering Blast output: evalue",evalue, " identity", identity, " coverage", coverage
-# hits_table_file_name = "DATA/new_sequences_sprot_enzyme.tab"
-# hits_table_file_name_filtered_out = open("DATA/new_sequences_sprot_enzyme_filtered.tab", "w")
+print "Filtering Blast output: evalue",evalue, " identity", identity, " coverage", coverage
+hits_table_file_name = "DATA/new_sequences_sprot_enzyme.tab"
+hits_table_file_name_filtered_out = open("DATA/new_sequences_sprot_enzyme_filtered.tab", "w")
 
 
-# hits_table_file_name_filtered_out.write("\t".join(["hit","subject","id","len","eval","cov"])+"\n")
+hits_table_file_name_filtered_out.write("\t".join(["hit","subject","id","len","eval","cov"])+"\n")
 
 
-# for line in open(hits_table_file_name, "r").read().splitlines():
-#     if line.startswith("#"): continue
+for line in open(hits_table_file_name, "r").read().splitlines():
+    if line.startswith("#"): continue
 
-#     query, target, ident, eval, cover = line.split("\t")
-#     eval = float(eval)
-#     ident = float(ident)
-#     cover = float(cover)
+    query, target, ident, eval, cover = line.split("\t")
+    eval = float(eval)
+    ident = float(ident)
+    cover = float(cover)
 
-#     if eval <= evalue and ident >= identity and cover >= coverage:
-#         hits_table_file_name_filtered_out.write(line+"\n")
+    if eval <= evalue and ident >= identity and cover >= coverage:
+        hits_table_file_name_filtered_out.write(line+"\n")
 
-# hits_table_file_name_filtered_out.close()
+hits_table_file_name_filtered_out.close()
 
-# hits_table_file_name_filtered = "DATA/new_sequences_sprot_enzyme_filtered.tab"
-# enzyme_table_file_name = 'DATA/ec_uniprot_oxidases.tsv'
+hits_table_file_name_filtered = "DATA/new_sequences_sprot_enzyme_filtered.tab"
+enzyme_table_file_name = 'DATA/ec_uniprot_oxidases.tsv'
 
-# hits = pd.read_csv(hits_table_file_name_filtered, sep="\t", header=0)
-# enzyme = pd.read_csv(enzyme_table_file_name, sep="\t", header=0)
+hits = pd.read_csv(hits_table_file_name_filtered, sep="\t", header=0)
+enzyme = pd.read_csv(enzyme_table_file_name, sep="\t", header=0)
 
-# hits.fillna('', inplace=True)  #replace empty values with blank spaces
-# enzyme.fillna('', inplace=True)
+hits.fillna('', inplace=True)  #replace empty values with blank spaces
+enzyme.fillna('', inplace=True)
 
-# enzyme = enzyme[enzyme.transferred == False] #drop transferred EC numbers
+enzyme = enzyme[enzyme.transferred == False] #drop transferred EC numbers
 
-# hits.subject = hits.subject.str[3:9] #take just the uniprot ID from the name
+hits.subject = hits.subject.str[3:9] #take just the uniprot ID from the name
 
-# def get_ecs(uniprot):
-#     if uniprot == '': #ignore invalid uniprot ids
-#         return ''
-#     else:
-#         return ' '.join(enzyme.EC[enzyme.uniprot.str.contains(uniprot)].values)
+def get_ecs(uniprot):
+    if uniprot == '': #ignore invalid uniprot ids
+        return ''
+    else:
+        return ' '.join(enzyme.EC[enzyme.uniprot.str.contains(uniprot)].values)
 
-# hits['EC'] = hits.subject.apply(get_ecs)
+hits['EC'] = hits.subject.apply(get_ecs)
 
-# output_file_name = "DATA/oxygen_utilizing_annot.tsv"
-# hits.to_csv(output_file_name, sep="\t", index=False)
+output_file_name = "DATA/oxygen_utilizing_annot.tsv"
+hits.to_csv(output_file_name, sep="\t", index=False)
 
-# ### read final mapping output
+## read final mapping output
 
-# mapping_out = open(output_file_name, "r").read().splitlines()
-# ecs_dict = {}
+mapping_out = open(output_file_name, "r").read().splitlines()
+ecs_dict = {}
 
-# for line in mapping_out[1:]:
-#     splitted = line.split("\t")
-#     ecs = splitted[-1]
+for line in mapping_out[1:]:
+    splitted = line.split("\t")
+    ecs = splitted[-1]
 
-#     for ec in ecs.split():
-#         if ec not in ecs_dict:
-#             ecs_dict[ec] = []
-#         ecs_dict[ec].append(splitted[0])
+    for ec in ecs.split():
+        if ec not in ecs_dict:
+            ecs_dict[ec] = []
+        ecs_dict[ec].append(splitted[0])
 
-# print "\n\n"
-# print len(ecs_dict), "oxygen-utilizing enzymes were found from classes", ecs_dict.keys()
-# print "Detailed mapping can be found in DATA/oxygen_utilizing_annot.tsv file"
+print "\n\n"
+print len(ecs_dict), "oxygen-utilizing enzymes were found from classes", ecs_dict.keys()
+print "Detailed mapping can be found in DATA/oxygen_utilizing_annot.tsv file"
 
 # print "\n\n"
 # #print "Executing SVM classifier..."
